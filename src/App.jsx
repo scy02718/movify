@@ -4,6 +4,7 @@ import Search from './components/Search'
 import Spinner from './components/Spinner';
 import MovieCard from './components/MovieCard';
 import { use } from 'react';
+import { updateSearchCount } from './appwrite';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -24,10 +25,20 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [movies, setMovies] = useState([]);
 
+  // use Backend as a service (BaaS) to store traending movies
+  // Firebase, Supabase, and so on are BaaS, but we will use appwrite.
+  // This will provide database management, user authentication, and file storage, without any knowledge of Backend
+  // Create new project, database, collection, and attributes and store them in .env.local.
+  // Created attributes of searchTerm (string, required), count (number, default 1), poster_url (url, required), and movie_id (string, required)
+  // 되게 재작년에 써봤던 firebase 랑 비슷하구나...
+  // Then go to permissions, and give all permissions. This is not recommended in production, but for development, it is fine
+
   // Debounce the search term. This will only be updated when the user stops typing for 500ms
   // Then this is handled by the fetchMovies function, in which the underlying useEffect will depend on debouncedSearchTerm
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
+  // This allows certain logic / functions to be called only when the searchTerm stops changing for 500ms
+  // THis will improve performance, efficiency, and prevent rate limiting
   useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
 
   // This is very common to have a loading state when fetching data
@@ -62,6 +73,13 @@ const App = () => {
         setMovies(data.results || []);
       }
 
+      if (query && data.results.length > 0) {
+        // If the query is not empty and the results are not empty, update the search count
+        // Send the "top" result to the updateSearchCount function.
+        // This function will check if the searchTerm exists in the database, and if it does, increment the count by 1
+        // Else, create a new document with the searchTerm and count of 1
+        await updateSearchCount(query, data.results[0]);
+      }
 
     } catch (e) {
       setErrorMessage("Something went wrong. Please try again later.")
