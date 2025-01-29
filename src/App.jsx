@@ -4,7 +4,7 @@ import Search from './components/Search'
 import Spinner from './components/Spinner';
 import MovieCard from './components/MovieCard';
 import { use } from 'react';
-import { updateSearchCount } from './appwrite';
+import { getTrendingMovies, updateSearchCount } from './appwrite';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -24,6 +24,7 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState(null);
   const [movies, setMovies] = useState([]);
+  const [trendingMovies, setTrendingMovies] = useState([]);
 
   // use Backend as a service (BaaS) to store traending movies
   // Firebase, Supabase, and so on are BaaS, but we will use appwrite.
@@ -89,10 +90,26 @@ const App = () => {
     }
   }
 
+  const loadTrendingMovies = async () => {
+    try {
+      const movies = await getTrendingMovies();
+      setTrendingMovies(movies);
+    } catch (error) {
+      console.log(e);
+    }
+  }
+
   // This is runs whenever the searchTerm changes
   useEffect(() => {
     fetchMovies(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
+
+  // This will run only once when the component is mounted
+  useEffect(() => {
+    loadTrendingMovies();
+
+    console.log(trendingMovies);
+  }, []);
 
   return (
     <main>
@@ -103,6 +120,20 @@ const App = () => {
           <h1>Find <span className='text-gradient'>Movies</span> You'll Enjoy Without the Hassle</h1>
           <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
         </header>
+        { trendingMovies.length > 0 && (
+        <section className='trending'>
+          <h2>Trending Movies</h2>
+          <ul>
+            {trendingMovies.map((movie, index) => (
+              <li key={movie.$id}>
+                {/* These tags already have styling, because of the tailwind 4.0 */}
+                <p>{index + 1}</p>
+                <img src={movie.poster_url} alt={movie.searchTerm} />
+              </li>
+            ))}
+          </ul>
+        </section>
+        )}
 
         <section className='all-movies'>
           <h2 className='mt-[40px]'>All Movies</h2>

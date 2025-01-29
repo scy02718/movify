@@ -59,3 +59,19 @@ export const updateSearchCount = async (searchTerm, movie) => {
         console.error(error);
     }
 }
+
+// This function is to fetch the trending movies (top 5 movies) that has been most searched
+export const getTrendingMovies = async () => {
+    try {
+        // This will query using appwrite sdk, to query the top 5 movies, sorted by the "count" number in descending order.
+        // This is it! 개쉬운데...?
+        const result = await database.listDocuments(DATABASE_ID, COLLECTION_ID, [
+            Query.limit(5),
+            Query.orderDesc("count")
+        ])
+
+        return result.documents;
+    } catch (error) {
+        console.error(error)
+    }
+}
